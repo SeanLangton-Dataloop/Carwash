@@ -113,6 +113,10 @@ export function BottomNav() {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
+  const isMenuActive = menuItems.some(
+    item => pathname === item.href || pathname.startsWith(`${item.href}/`),
+  )
+
   return (
     <>
       <div className="flex h-16 items-stretch border-t border-neutral-200 bg-white">
@@ -138,11 +142,15 @@ export function BottomNav() {
         <button
           type="button"
           onClick={() => setIsMenuOpen(true)}
-          className="relative flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-xs text-neutral-500 transition-colors
-            focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-inset"
+          className={`relative flex min-h-[44px] flex-1 flex-col items-center justify-center gap-0.5 text-xs transition-colors
+            focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-inset
+            ${isMenuActive ? 'text-sky-500' : 'text-neutral-500'}`}
           aria-label="Open menu"
           aria-expanded={isMenuOpen}
         >
+          {isMenuActive && (
+            <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-sky-500" />
+          )}
           <IconMenu />
           <span>Menu</span>
         </button>
@@ -163,18 +171,22 @@ export function BottomNav() {
           >
             <div className="mx-auto mt-3 h-1 w-12 rounded-full bg-neutral-200" />
             <nav className="mt-4 px-4 space-y-1">
-              {menuItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-neutral-700
-                    hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                >
-                  <item.Icon />
-                  {item.label}
-                </Link>
-              ))}
+              {menuItems.map((item) => {
+                const itemActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors
+                      hover:bg-neutral-100 focus:outline-none focus:ring-2 focus:ring-sky-500
+                      ${itemActive ? 'text-sky-600 bg-sky-50' : 'text-neutral-700'}`}
+                  >
+                    <item.Icon />
+                    {item.label}
+                  </Link>
+                )
+              })}
             </nav>
           </div>
         </>

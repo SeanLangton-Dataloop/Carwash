@@ -287,7 +287,7 @@ export default function SettingsClient({
                     type="button"
                     onClick={() => toggleService(i)}
                     aria-pressed={s.active}
-                    className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[36px] ${
+                    className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[44px] ${
                       s.active
                         ? 'bg-green-100 text-green-800'
                         : 'bg-neutral-100 text-neutral-500'
@@ -296,13 +296,13 @@ export default function SettingsClient({
                     {s.active ? 'Active' : 'Inactive'}
                   </button>
 
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-row gap-1">
                     <button
                       type="button"
                       onClick={() => moveService(i, 'up')}
                       disabled={i === 0}
                       aria-label={`Move ${s.name} up`}
-                      className="flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-30 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-30 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     >
                       ↑
                     </button>
@@ -311,7 +311,7 @@ export default function SettingsClient({
                       onClick={() => moveService(i, 'down')}
                       disabled={i === serviceTypes.length - 1}
                       aria-label={`Move ${s.name} down`}
-                      className="flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-30 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-30 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     >
                       ↓
                     </button>
@@ -373,7 +373,7 @@ export default function SettingsClient({
                     type="button"
                     onClick={() => toggleVehicle(i)}
                     aria-pressed={v.active}
-                    className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[36px] ${
+                    className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[44px] ${
                       v.active
                         ? 'bg-green-100 text-green-800'
                         : 'bg-neutral-100 text-neutral-500'
@@ -382,13 +382,13 @@ export default function SettingsClient({
                     {v.active ? 'Active' : 'Inactive'}
                   </button>
 
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-row gap-1">
                     <button
                       type="button"
                       onClick={() => moveVehicle(i, 'up')}
                       disabled={i === 0}
                       aria-label={`Move ${v.name} up`}
-                      className="flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-30 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-30 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     >
                       ↑
                     </button>
@@ -397,7 +397,7 @@ export default function SettingsClient({
                       onClick={() => moveVehicle(i, 'down')}
                       disabled={i === vehicleTypes.length - 1}
                       aria-label={`Move ${v.name} down`}
-                      className="flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-30 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-30 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     >
                       ↓
                     </button>

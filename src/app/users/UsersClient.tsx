@@ -209,7 +209,7 @@ export default function UsersClient({ users, currentUserId }: Props) {
                               type="button"
                               onClick={() => handleRemove(u.id)}
                               disabled={isRemoving}
-                              className="inline-flex items-center justify-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 min-h-[36px]"
+                              className="inline-flex items-center justify-center rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 min-h-[44px]"
                             >
                               {isRemoving && (
                                 <span className="mr-1.5 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -219,7 +219,7 @@ export default function UsersClient({ users, currentUserId }: Props) {
                             <button
                               type="button"
                               onClick={() => setRemoveConfirm(null)}
-                              className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[36px]"
+                              className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[44px]"
                             >
                               Cancel
                             </button>
@@ -228,7 +228,7 @@ export default function UsersClient({ users, currentUserId }: Props) {
                           <button
                             type="button"
                             onClick={() => setRemoveConfirm(u.id)}
-                            className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[36px]"
+                            className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[44px]"
                           >
                             Remove
                           </button>

@@ -5,6 +5,9 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Car Wash Manager',
   description: 'Daily operations management for car wash owners',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({

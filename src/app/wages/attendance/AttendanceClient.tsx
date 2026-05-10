@@ -67,7 +67,7 @@ export default function AttendanceClient({ date, staff, initialPresent }: Props)
           <button
             type="button"
             onClick={() => router.push(`/wages/attendance?date=${addDays(date, -1)}`)}
-            className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[36px]"
+            className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[44px]"
           >
             ← Prev
           </button>
@@ -78,7 +78,7 @@ export default function AttendanceClient({ date, staff, initialPresent }: Props)
           <button
             type="button"
             onClick={() => router.push(`/wages/attendance?date=${addDays(date, 1)}`)}
-            className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[36px]"
+            className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[44px]"
           >
             Next →
           </button>
