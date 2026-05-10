@@ -856,6 +856,24 @@ export default function SettingsClient({
           </div>
         </div>
 
+      {/* ── Import / Export ──────────────────────────────── */}
+      <div className="rounded-xl bg-white shadow-sm border border-neutral-200">
+        <div className="p-4 md:p-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-neutral-900">Import / Export</h2>
+            <p className="mt-1 text-sm text-neutral-500">
+              Download your data as CSV or import historical records.
+            </p>
+          </div>
+          <a
+            href="/settings/import-export"
+            className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 min-h-[44px] shrink-0"
+          >
+            Open →
+          </a>
+        </div>
+      </div>
+
       </div>
 
       {/* Success toast */}
