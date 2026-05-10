@@ -7,6 +7,7 @@ import {
   getRevenueByServiceType,
   getCostVsRevenue,
 } from '@/lib/dashboard'
+import { addDays } from '@/lib/wages'
 
 function monthLabel(dateStr: string): string {
   const months = [
@@ -38,11 +39,19 @@ export default async function DashboardPage() {
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
   const month = today.slice(0, 7)
 
-  const [stats, revenueByDay, serviceRevenue, weeklyMetrics] = await Promise.all([
+  const sevenDaysAgo = addDays(today, -6)
+
+  const [stats, revenueByDay, serviceRevenue, weeklyMetrics, weekRevenueRows] = await Promise.all([
     getDashboardStats(siteId),
     getRevenueByDay(siteId, 30),
     getRevenueByServiceType(siteId, month),
     getCostVsRevenue(siteId, month),
+    supabase
+      .from('daily_revenue')
+      .select('date')
+      .eq('site_id', siteId)
+      .gte('date', sevenDaysAgo)
+      .lte('date', today),
   ])
 
   return (
@@ -52,6 +61,7 @@ export default async function DashboardPage() {
       serviceRevenue={serviceRevenue}
       weeklyMetrics={weeklyMetrics}
       monthLabel={monthLabel(today)}
+      weekEntries={weekRevenueRows.data ?? []}
     />
   )
 }

@@ -3,7 +3,11 @@ import { createClient } from '@/lib/supabase-server'
 import { getServiceTypes, getVehicleTypes, getPriceMatrix, getDiscountRules } from '@/lib/config'
 import RevenueEntryForm from '@/components/revenue/RevenueEntryForm'
 
-export default async function NewRevenuePage() {
+export default async function NewRevenuePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
   const supabase = await createClient()
   const {
     data: { user },
@@ -33,12 +37,17 @@ export default async function NewRevenuePage() {
     timeZone: 'Africa/Johannesburg',
   })
 
+  const { date: rawDate } = await searchParams
+  const dateParam = typeof rawDate === 'string' ? rawDate : null
+  const initialDate =
+    dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : today
+
   return (
     <RevenueEntryForm
       serviceTypes={activeServices}
       vehicleTypes={activeVehicles}
       priceMatrix={priceMatrix}
-      initialDate={today}
+      initialDate={initialDate}
       discountRules={discountRules}
     />
   )

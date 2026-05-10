@@ -3,16 +3,25 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import { formatZAR } from '@/lib/format'
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
 function formatDate(dateStr: string): string {
-  const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ]
   const parts = dateStr.split('-')
-  const year = parts[0] ?? ''
   const month = parseInt(parts[1] ?? '1', 10)
   const day = parseInt(parts[2] ?? '1', 10)
-  return `${day} ${months[month - 1] ?? ''} ${year}`
+  return `${day} ${MONTHS[month - 1] ?? ''} ${parts[0] ?? ''}`
+}
+
+function formatMissedDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00Z')
+  return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()] ?? ''}`
+}
+
+function shiftDate(base: string, n: number): string {
+  const d = new Date(base + 'T12:00:00Z')
+  d.setUTCDate(d.getUTCDate() + n)
+  return d.toISOString().slice(0, 10)
 }
 
 export default async function RevenuePage() {
@@ -38,6 +47,18 @@ export default async function RevenuePage() {
 
   const rows = entries ?? []
 
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
+  const entryDateSet = new Set(rows.map(r => r.date))
+
+  // Last 30 days: from 30 days ago up to yesterday (today may not be entered yet)
+  const missedDays: string[] = []
+  for (let i = 30; i >= 1; i--) {
+    const d = shiftDate(today, -i)
+    if (!entryDateSet.has(d)) {
+      missedDays.push(d)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-neutral-100">
       <div className="mx-auto max-w-2xl px-4 py-6 pb-24 md:pb-6 space-y-6">
@@ -51,6 +72,37 @@ export default async function RevenuePage() {
           >
             Log today
           </Link>
+        </div>
+
+        {/* Missed days */}
+        <div className="rounded-xl bg-white shadow-sm border border-neutral-200 p-4 md:p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <h2 className="text-sm font-semibold text-neutral-900">Days without data</h2>
+            {missedDays.length > 0 ? (
+              <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
+                {missedDays.length} {missedDays.length === 1 ? 'day' : 'days'}
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">
+                All caught up
+              </span>
+            )}
+          </div>
+          {missedDays.length === 0 ? (
+            <p className="text-sm text-neutral-500">No missing entries in the last 30 days.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {missedDays.map(date => (
+                <Link
+                  key={date}
+                  href={`/revenue/new?date=${date}`}
+                  className="inline-flex items-center rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800 transition-colors hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-1"
+                >
+                  {formatMissedDate(date)}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         {rows.length === 0 ? (

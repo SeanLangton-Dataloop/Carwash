@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { formatZAR } from '@/lib/format'
 import type { DashboardStats, RevenueDay, ServiceRevenue, WeeklyMetrics } from '@/lib/dashboard'
+import WeekTracker from '@/components/dashboard/WeekTracker'
 
 const ChartSkeleton = () => (
   <div className="animate-pulse rounded bg-neutral-200 h-60 w-full" />
@@ -35,6 +36,7 @@ interface Props {
   serviceRevenue: ServiceRevenue[]
   weeklyMetrics: WeeklyMetrics[]
   monthLabel: string
+  weekEntries: { date: string }[]
 }
 
 interface StatCardProps {
@@ -57,6 +59,7 @@ export default function DashboardClient({
   serviceRevenue,
   weeklyMetrics,
   monthLabel,
+  weekEntries,
 }: Props) {
   const grossProfit =
     weeklyMetrics.reduce((s, w) => s + w.revenue, 0) -
@@ -67,6 +70,9 @@ export default function DashboardClient({
       <div className="mx-auto max-w-4xl px-4 py-6 pb-24 md:pb-6 space-y-6">
 
         <h1 className="text-xl font-semibold text-neutral-900">Dashboard</h1>
+
+        {/* Week tracker */}
+        <WeekTracker entries={weekEntries} />
 
         {/* Section 1 — Stat cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
