@@ -1,17 +1,15 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
-import WagesClient from './WagesClient'
-import { getMondayOf, addDays, calculateWeeklyWages } from '@/lib/wages'
+import AttendanceClient from './AttendanceClient'
 
-export default async function WagesPage({
+export default async function AttendancePage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const { week: rawWeek } = await searchParams
+  const { date: rawDate } = await searchParams
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
-  const weekStart = getMondayOf(typeof rawWeek === 'string' ? rawWeek : today)
-  const weekEnd = addDays(weekStart, 6)
+  const date = typeof rawDate === 'string' ? rawDate : today
 
   const supabase = await createClient()
   const {
@@ -30,30 +28,27 @@ export default async function WagesPage({
   const [{ data: staffRows }, { data: attendanceRows }] = await Promise.all([
     supabase
       .from('staff')
-      .select('id, full_name, role, daily_rate')
+      .select('id, full_name, role')
       .eq('site_id', profile.site_id)
       .eq('is_active', true)
       .order('full_name'),
     supabase
       .from('attendance')
-      .select('staff_id, date, present')
+      .select('staff_id, present')
       .eq('site_id', profile.site_id)
-      .gte('date', weekStart)
-      .lte('date', weekEnd),
+      .eq('date', date),
   ])
 
-  const summaries = calculateWeeklyWages(
-    staffRows ?? [],
-    attendanceRows ?? [],
-    weekStart,
-    weekEnd,
-  )
+  const initialPresent: Record<string, boolean> = {}
+  for (const row of attendanceRows ?? []) {
+    initialPresent[row.staff_id] = row.present
+  }
 
   return (
-    <WagesClient
-      weekStart={weekStart}
-      weekEnd={weekEnd}
-      summaries={summaries}
+    <AttendanceClient
+      date={date}
+      staff={staffRows ?? []}
+      initialPresent={initialPresent}
     />
   )
 }
