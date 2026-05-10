@@ -1,12 +1,50 @@
-export default function SettingsPage() {
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase-server'
+import { getServiceTypes, getVehicleTypes, getPriceMatrix } from '@/lib/config'
+import SettingsClient from './SettingsClient'
+
+export default async function SettingsPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, site_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile || profile.role !== 'admin' || !profile.site_id) redirect('/dashboard')
+  const siteId = profile.site_id
+
+  const { data: site } = await supabase
+    .from('sites')
+    .select('id, name, location_name, latitude, longitude')
+    .eq('id', siteId)
+    .single()
+
+  const [serviceTypes, vehicleTypes, priceMatrix] = await Promise.all([
+    getServiceTypes(siteId),
+    getVehicleTypes(siteId),
+    getPriceMatrix(siteId),
+  ])
+
   return (
-    <div className="min-h-screen bg-neutral-100">
-      <div className="mx-auto max-w-2xl px-4 py-6 pb-24 md:pb-6">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-neutral-900">Settings</h1>
-        </div>
-        <p className="text-sm text-neutral-500">Coming soon.</p>
-      </div>
-    </div>
+    <SettingsClient
+      site={
+        site ?? {
+          id: profile.site_id,
+          name: '',
+          location_name: null,
+          latitude: null,
+          longitude: null,
+        }
+      }
+      serviceTypes={serviceTypes}
+      vehicleTypes={vehicleTypes}
+      priceMatrix={priceMatrix}
+    />
   )
 }
