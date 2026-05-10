@@ -129,6 +129,19 @@ export default function DashboardClient({
           <CostRevenueChart data={weeklyMetrics} grossProfit={grossProfit} />
         </div>
 
+        {/* Section 5 — AI Summary */}
+        <div className="rounded-xl bg-white shadow-sm border border-neutral-200 p-4 md:p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <h2 className="text-base font-semibold text-neutral-900">AI Daily Summary</h2>
+            <span className="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-medium text-sky-700 border border-sky-200">
+              Coming soon
+            </span>
+          </div>
+          <p className="text-sm text-neutral-500">
+            AI daily summary will be available in a future update.
+          </p>
+        </div>
+
       </div>
     </div>
   )
