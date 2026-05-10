@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createDailyRevenue, updateDailyRevenue } from '@/app/revenue/actions'
 import { formatZAR } from '@/lib/format'
-import type { ServiceType, VehicleType, PriceMatrix } from '@/lib/types'
+import type { ServiceType, VehicleType, PriceMatrix, DiscountRule } from '@/lib/types'
 
 interface ExistingEntry {
   id: string
@@ -26,6 +26,16 @@ interface Props {
   priceMatrix: PriceMatrix
   initialDate: string
   existingEntry?: ExistingEntry
+  discountRules?: DiscountRule[]
+}
+
+function computeActiveDiscount(
+  dateStr: string,
+  rules: DiscountRule[],
+): DiscountRule | null {
+  if (!dateStr || rules.length === 0) return null
+  const dayOfWeek = new Date(`${dateStr}T12:00:00`).getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6
+  return rules.find(r => r.active && r.day_of_week === dayOfWeek) ?? null
 }
 
 interface CellState {
@@ -37,7 +47,8 @@ function buildInitialMatrix(
   serviceTypes: ServiceType[],
   vehicleTypes: VehicleType[],
   priceMatrix: PriceMatrix,
-  existingEntry?: ExistingEntry
+  existingEntry?: ExistingEntry,
+  discount?: DiscountRule | null,
 ): Record<string, CellState> {
   const m: Record<string, CellState> = {}
   for (const s of serviceTypes) {
@@ -49,8 +60,16 @@ function buildInitialMatrix(
       if (existing) {
         m[key] = { quantity: String(existing.quantity), unitPrice: String(existing.unit_price) }
       } else {
-        const price = priceMatrix[key]
-        m[key] = { quantity: '', unitPrice: price != null ? String(price) : '' }
+        const rawPrice = priceMatrix[key] ?? null
+        let unitPrice: string
+        if (rawPrice == null) {
+          unitPrice = ''
+        } else if (discount) {
+          unitPrice = String(Math.round(rawPrice * (1 - discount.percentage / 100)))
+        } else {
+          unitPrice = String(rawPrice)
+        }
+        m[key] = { quantity: '', unitPrice }
       }
     }
   }
@@ -63,14 +82,32 @@ export default function RevenueEntryForm({
   priceMatrix,
   initialDate,
   existingEntry,
+  discountRules = [],
 }: Props) {
   const router = useRouter()
   const isEditMode = !!existingEntry
 
   const [date, setDate] = useState(existingEntry?.date ?? initialDate)
+
+  const initialDiscount = isEditMode
+    ? null
+    : computeActiveDiscount(initialDate, discountRules)
+
   const [matrix, setMatrix] = useState<Record<string, CellState>>(() =>
-    buildInitialMatrix(serviceTypes, vehicleTypes, priceMatrix, existingEntry)
+    buildInitialMatrix(serviceTypes, vehicleTypes, priceMatrix, existingEntry, initialDiscount)
   )
+  const [activeDiscount, setActiveDiscount] = useState<DiscountRule | null>(initialDiscount)
+  const [discountDismissed, setDiscountDismissed] = useState(false)
+
+  const isFirstRender = useRef(true)
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return }
+    if (isEditMode) return
+    const discount = computeActiveDiscount(date, discountRules)
+    setActiveDiscount(discount)
+    setDiscountDismissed(false)
+    setMatrix(buildInitialMatrix(serviceTypes, vehicleTypes, priceMatrix, undefined, discount))
+  }, [date]) // eslint-disable-line react-hooks/exhaustive-deps
   const [cashTotal, setCashTotal] = useState(
     existingEntry ? String(existingEntry.cash_total) : ''
   )
@@ -236,6 +273,27 @@ export default function RevenueEntryForm({
             <p className="mb-4 text-xs text-neutral-500">
               Top field: quantity. Bottom field: price per wash (R).
             </p>
+
+            {activeDiscount && !discountDismissed && (
+              <div
+                role="status"
+                className="mb-4 flex items-start justify-between gap-3 rounded-lg border border-sky-200 bg-sky-50 px-4 py-3"
+              >
+                <p className="text-sm text-sky-800">
+                  <span className="font-semibold">{activeDiscount.name}:</span>{' '}
+                  {activeDiscount.percentage}% discount applied to all prices. You can override
+                  individual prices below.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setDiscountDismissed(true)}
+                  className="shrink-0 text-sky-500 hover:text-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 rounded"
+                  aria-label="Dismiss discount notice"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             <div className="overflow-x-auto -mx-4 px-4">
               <table className="min-w-[500px] w-full">

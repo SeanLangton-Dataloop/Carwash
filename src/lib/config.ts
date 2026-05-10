@@ -1,6 +1,6 @@
 import { createClient } from './supabase-server'
 import type { Json } from './database.types'
-import type { ServiceType, VehicleType, PriceMatrix } from './types'
+import type { ServiceType, VehicleType, PriceMatrix, DiscountRule } from './types'
 
 const defaultServiceTypes: ServiceType[] = [
   { name: 'Basic Wash', active: true },
@@ -50,4 +50,24 @@ export async function getPriceMatrix(siteId: string): Promise<PriceMatrix> {
   const data = await getConfig(siteId, 'price_matrix')
   if (!data || typeof data !== 'object' || Array.isArray(data)) return {}
   return data as PriceMatrix
+}
+
+export async function getDiscountRules(siteId: string): Promise<DiscountRule[]> {
+  const data = await getConfig(siteId, 'discount_rules')
+  if (!Array.isArray(data)) return []
+  return data as DiscountRule[]
+}
+
+export async function setDiscountRules(siteId: string, rules: DiscountRule[]): Promise<void> {
+  await setConfig(siteId, 'discount_rules', rules)
+}
+
+export async function getActiveDiscountForDate(
+  siteId: string,
+  date: string,
+): Promise<DiscountRule | null> {
+  const rules = await getDiscountRules(siteId)
+  // Use noon local time to avoid any DST edge-case shifting the date
+  const dayOfWeek = new Date(`${date}T12:00:00`).getDay() as 0 | 1 | 2 | 3 | 4 | 5 | 6
+  return rules.find(r => r.active && r.day_of_week === dayOfWeek) ?? null
 }

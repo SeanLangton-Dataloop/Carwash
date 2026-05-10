@@ -6,8 +6,21 @@ import {
   saveServiceTypes,
   saveVehicleTypes,
   savePriceMatrix,
+  saveDiscountRules,
 } from './actions'
-import type { ServiceType, VehicleType, PriceMatrix } from '@/lib/types'
+import type { ServiceType, VehicleType, PriceMatrix, DiscountRule } from '@/lib/types'
+
+const DAY_LABELS: Record<number, string> = {
+  0: 'Sunday',
+  1: 'Monday',
+  2: 'Tuesday',
+  3: 'Wednesday',
+  4: 'Thursday',
+  5: 'Friday',
+  6: 'Saturday',
+}
+
+const DAY_OPTIONS = [1, 2, 3, 4, 5, 6, 0] as const
 
 interface SiteDetails {
   id: string
@@ -22,6 +35,14 @@ interface Props {
   serviceTypes: ServiceType[]
   vehicleTypes: VehicleType[]
   priceMatrix: PriceMatrix
+  discountRules: DiscountRule[]
+}
+
+interface DiscountRuleDraft {
+  name: string
+  day_of_week: 0 | 1 | 2 | 3 | 4 | 5 | 6
+  percentage: string
+  active: boolean
 }
 
 export default function SettingsClient({
@@ -29,6 +50,7 @@ export default function SettingsClient({
   serviceTypes: initServiceTypes,
   vehicleTypes: initVehicleTypes,
   priceMatrix: initPriceMatrix,
+  discountRules: initDiscountRules,
 }: Props) {
   // Site details
   const [siteName, setSiteName] = useState(site.name)
@@ -54,6 +76,20 @@ export default function SettingsClient({
   const [priceMatrix, setPriceMatrix] = useState<PriceMatrix>(initPriceMatrix)
   const [priceError, setPriceError] = useState('')
   const [isSavingPrices, startSavePrices] = useTransition()
+
+  // Discount rules
+  const [discountDrafts, setDiscountDrafts] = useState<DiscountRuleDraft[]>(
+    initDiscountRules.map(r => ({ ...r, percentage: String(r.percentage) }))
+  )
+  const [showAddRule, setShowAddRule] = useState(false)
+  const [newRuleDraft, setNewRuleDraft] = useState<DiscountRuleDraft>({
+    name: '',
+    day_of_week: 1,
+    percentage: '',
+    active: true,
+  })
+  const [discountError, setDiscountError] = useState('')
+  const [isSavingDiscounts, startSaveDiscounts] = useTransition()
 
   // Toast
   const [toast, setToast] = useState('')
@@ -168,6 +204,86 @@ export default function SettingsClient({
       const res = await savePriceMatrix(priceMatrix)
       if (res.error) setPriceError(res.error)
       else showToast('Prices saved')
+    })
+  }
+
+  // ── Discount rules helpers ────────────────────────────────
+  function draftsToRules(drafts: DiscountRuleDraft[]): DiscountRule[] {
+    return drafts.map(d => ({
+      name: d.name,
+      day_of_week: d.day_of_week,
+      percentage: parseInt(d.percentage, 10) || 0,
+      active: d.active,
+    }))
+  }
+
+  function validateDiscountDraft(
+    draft: DiscountRuleDraft,
+    otherDrafts: DiscountRuleDraft[],
+  ): string | null {
+    if (!draft.name.trim()) return 'Rule name is required'
+    const pct = parseInt(draft.percentage, 10)
+    if (isNaN(pct) || pct < 1 || pct > 100) return 'Discount must be between 1 and 100%'
+    if (
+      draft.active &&
+      otherDrafts.some(d => d.active && d.day_of_week === draft.day_of_week)
+    ) {
+      return `An active rule for ${DAY_LABELS[draft.day_of_week] ?? ''} already exists`
+    }
+    return null
+  }
+
+  function updateDiscountDraft(
+    i: number,
+    field: keyof DiscountRuleDraft,
+    value: string | boolean | (0 | 1 | 2 | 3 | 4 | 5 | 6),
+  ) {
+    setDiscountDrafts(prev => prev.map((d, idx) => idx === i ? { ...d, [field]: value } : d))
+    setDiscountError('')
+  }
+
+  function handleSaveRule(i: number) {
+    const draft = discountDrafts[i]
+    if (!draft) return
+    const others = discountDrafts.filter((_, idx) => idx !== i)
+    const validationError = validateDiscountDraft(draft, others)
+    if (validationError) { setDiscountError(validationError); return }
+    setDiscountError('')
+    const updated = discountDrafts.map((d, idx) =>
+      idx === i ? { ...d, name: d.name.trim() } : d
+    )
+    startSaveDiscounts(async () => {
+      const res = await saveDiscountRules(draftsToRules(updated))
+      if (res.error) setDiscountError(res.error)
+      else { setDiscountDrafts(updated); showToast('Discount rule saved') }
+    })
+  }
+
+  function handleDeleteRule(i: number) {
+    setDiscountError('')
+    const updated = discountDrafts.filter((_, idx) => idx !== i)
+    startSaveDiscounts(async () => {
+      const res = await saveDiscountRules(draftsToRules(updated))
+      if (res.error) setDiscountError(res.error)
+      else { setDiscountDrafts(updated); showToast('Rule deleted') }
+    })
+  }
+
+  function handleAddRule() {
+    const validationError = validateDiscountDraft(newRuleDraft, discountDrafts)
+    if (validationError) { setDiscountError(validationError); return }
+    setDiscountError('')
+    const trimmed = { ...newRuleDraft, name: newRuleDraft.name.trim() }
+    const updated = [...discountDrafts, trimmed]
+    startSaveDiscounts(async () => {
+      const res = await saveDiscountRules(draftsToRules(updated))
+      if (res.error) setDiscountError(res.error)
+      else {
+        setDiscountDrafts(updated)
+        setNewRuleDraft({ name: '', day_of_week: 1, percentage: '', active: true })
+        setShowAddRule(false)
+        showToast('Rule added')
+      }
     })
   }
 
@@ -524,6 +640,219 @@ export default function SettingsClient({
               )}
               Save all prices
             </button>
+          </div>
+        </div>
+
+        {/* ── 5. Discount Rules ────────────────────────────── */}
+        <div className="rounded-xl bg-white shadow-sm border border-neutral-200">
+          <div className="p-4 md:p-6 space-y-4">
+            <div>
+              <h2 className="text-base font-semibold text-neutral-900">Discount Rules</h2>
+              <p className="mt-0.5 text-xs text-neutral-500">
+                Apply a percentage discount to all prices on a given day of the week.
+              </p>
+            </div>
+
+            {discountDrafts.length === 0 && !showAddRule ? (
+              <p className="text-sm text-neutral-500">No discount rules configured.</p>
+            ) : (
+              <ul className="divide-y divide-neutral-100">
+                {discountDrafts.map((draft, i) => (
+                  <li key={i} className="py-4 first:pt-0 space-y-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="block text-xs font-medium text-neutral-500 mb-1">
+                          Rule name
+                        </label>
+                        <input
+                          type="text"
+                          value={draft.name}
+                          onChange={e => updateDiscountDraft(i, 'name', e.target.value)}
+                          placeholder="e.g. Pensioner Tuesday"
+                          className="block w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-neutral-500 mb-1">
+                          Day of week
+                        </label>
+                        <select
+                          value={draft.day_of_week}
+                          onChange={e =>
+                            updateDiscountDraft(
+                              i,
+                              'day_of_week',
+                              parseInt(e.target.value, 10) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+                            )
+                          }
+                          className="block w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        >
+                          {DAY_OPTIONS.map(d => (
+                            <option key={d} value={d}>
+                              {DAY_LABELS[d]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-medium text-neutral-500">Discount %</label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={draft.percentage}
+                          onChange={e => updateDiscountDraft(i, 'percentage', e.target.value)}
+                          placeholder="20"
+                          className="w-16 rounded-lg border border-neutral-300 bg-white px-2 py-2 text-base text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => updateDiscountDraft(i, 'active', !draft.active)}
+                        aria-pressed={draft.active}
+                        className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[44px] ${
+                          draft.active
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-neutral-100 text-neutral-500'
+                        }`}
+                      >
+                        {draft.active ? 'Active' : 'Inactive'}
+                      </button>
+                      <div className="ml-auto flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleSaveRule(i)}
+                          disabled={isSavingDiscounts}
+                          className="inline-flex items-center justify-center rounded-lg bg-sky-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 disabled:opacity-50 min-h-[44px]"
+                        >
+                          {isSavingDiscounts ? (
+                            <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          ) : (
+                            'Save'
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRule(i)}
+                          disabled={isSavingDiscounts}
+                          className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-red-50 hover:border-red-300 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:opacity-50 min-h-[44px]"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* Add rule form */}
+            {showAddRule && (
+              <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 space-y-3">
+                <p className="text-sm font-medium text-sky-900">New discount rule</p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">
+                      Rule name
+                    </label>
+                    <input
+                      type="text"
+                      value={newRuleDraft.name}
+                      onChange={e => setNewRuleDraft(d => ({ ...d, name: e.target.value }))}
+                      placeholder="e.g. Pensioner Tuesday"
+                      className="block w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-neutral-600 mb-1">
+                      Day of week
+                    </label>
+                    <select
+                      value={newRuleDraft.day_of_week}
+                      onChange={e =>
+                        setNewRuleDraft(d => ({
+                          ...d,
+                          day_of_week: parseInt(e.target.value, 10) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+                        }))
+                      }
+                      className="block w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    >
+                      {DAY_OPTIONS.map(d => (
+                        <option key={d} value={d}>
+                          {DAY_LABELS[d]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-medium text-neutral-600">Discount %</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={newRuleDraft.percentage}
+                      onChange={e => setNewRuleDraft(d => ({ ...d, percentage: e.target.value }))}
+                      placeholder="20"
+                      className="w-16 rounded-lg border border-neutral-300 bg-white px-2 py-2 text-base text-center text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setNewRuleDraft(d => ({ ...d, active: !d.active }))}
+                    aria-pressed={newRuleDraft.active}
+                    className={`inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[44px] ${
+                      newRuleDraft.active
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-neutral-100 text-neutral-500'
+                    }`}
+                  >
+                    {newRuleDraft.active ? 'Active' : 'Inactive'}
+                  </button>
+                  <div className="ml-auto flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAddRule}
+                      disabled={isSavingDiscounts}
+                      className="inline-flex items-center justify-center rounded-lg bg-sky-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 disabled:opacity-50 min-h-[44px]"
+                    >
+                      {isSavingDiscounts ? (
+                        <span className="mr-1.5 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : null}
+                      Add rule
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAddRule(false)
+                        setDiscountError('')
+                        setNewRuleDraft({ name: '', day_of_week: 1, percentage: '', active: true })
+                      }}
+                      className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[44px]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {discountError && (
+              <div role="alert" className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
+                {discountError}
+              </div>
+            )}
+
+            {!showAddRule && (
+              <button
+                type="button"
+                onClick={() => { setShowAddRule(true); setDiscountError('') }}
+                className="inline-flex items-center justify-center rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 min-h-[44px]"
+              >
+                Add rule
+              </button>
+            )}
           </div>
         </div>
 

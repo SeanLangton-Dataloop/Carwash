@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
-import { getServiceTypes, getVehicleTypes, getPriceMatrix } from '@/lib/config'
+import { getServiceTypes, getVehicleTypes, getPriceMatrix, getDiscountRules } from '@/lib/config'
 import { formatZAR } from '@/lib/format'
 import RevenueEntryForm from '@/components/revenue/RevenueEntryForm'
 
@@ -43,10 +43,11 @@ export default async function RevenueDatePage({
 
   const lineItems = lineItemRows ?? []
 
-  const [serviceTypes, vehicleTypes, priceMatrix] = await Promise.all([
+  const [serviceTypes, vehicleTypes, priceMatrix, discountRules] = await Promise.all([
     getServiceTypes(siteId),
     getVehicleTypes(siteId),
     getPriceMatrix(siteId),
+    getDiscountRules(siteId),
   ])
 
   const activeServices = serviceTypes.filter(s => s.active)
@@ -145,6 +146,7 @@ export default async function RevenueDatePage({
         vehicleTypes={activeVehicles}
         priceMatrix={priceMatrix}
         initialDate={date}
+        discountRules={discountRules}
         existingEntry={{
           id: revenue.id,
           date: revenue.date,

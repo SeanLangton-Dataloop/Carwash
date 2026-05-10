@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
-import { getServiceTypes, getVehicleTypes, getPriceMatrix } from '@/lib/config'
+import { getServiceTypes, getVehicleTypes, getPriceMatrix, getDiscountRules } from '@/lib/config'
 import SettingsClient from './SettingsClient'
 
 export default async function SettingsPage() {
@@ -25,10 +25,11 @@ export default async function SettingsPage() {
     .eq('id', siteId)
     .single()
 
-  const [serviceTypes, vehicleTypes, priceMatrix] = await Promise.all([
+  const [serviceTypes, vehicleTypes, priceMatrix, discountRules] = await Promise.all([
     getServiceTypes(siteId),
     getVehicleTypes(siteId),
     getPriceMatrix(siteId),
+    getDiscountRules(siteId),
   ])
 
   return (
@@ -45,6 +46,7 @@ export default async function SettingsPage() {
       serviceTypes={serviceTypes}
       vehicleTypes={vehicleTypes}
       priceMatrix={priceMatrix}
+      discountRules={discountRules}
     />
   )
 }

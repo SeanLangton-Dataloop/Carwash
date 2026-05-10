@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
-import { getServiceTypes, getVehicleTypes, getPriceMatrix } from '@/lib/config'
+import { getServiceTypes, getVehicleTypes, getPriceMatrix, getDiscountRules } from '@/lib/config'
 import RevenueEntryForm from '@/components/revenue/RevenueEntryForm'
 
 export default async function NewRevenuePage() {
@@ -19,10 +19,11 @@ export default async function NewRevenuePage() {
   if (!profile?.site_id) redirect('/dashboard')
   const siteId = profile.site_id
 
-  const [serviceTypes, vehicleTypes, priceMatrix] = await Promise.all([
+  const [serviceTypes, vehicleTypes, priceMatrix, discountRules] = await Promise.all([
     getServiceTypes(siteId),
     getVehicleTypes(siteId),
     getPriceMatrix(siteId),
+    getDiscountRules(siteId),
   ])
 
   const activeServices = serviceTypes.filter(s => s.active)
@@ -38,6 +39,7 @@ export default async function NewRevenuePage() {
       vehicleTypes={activeVehicles}
       priceMatrix={priceMatrix}
       initialDate={today}
+      discountRules={discountRules}
     />
   )
 }

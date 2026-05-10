@@ -114,5 +114,12 @@ export type WageSummary = {
 // Price matrix key format: "ServiceName|VehicleType"
 export type PriceMatrix = Record<string, number>
 
+export type DiscountRule = {
+  name: string
+  day_of_week: 0 | 1 | 2 | 3 | 4 | 5 | 6
+  percentage: number
+  active: boolean
+}
+
 export type ServiceType = { name: string; active: boolean }
 export type VehicleType = { name: string; active: boolean }

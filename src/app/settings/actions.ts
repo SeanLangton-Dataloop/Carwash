@@ -3,8 +3,19 @@
 import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
 import type { Json } from '@/lib/database.types'
-import type { ServiceType, VehicleType, PriceMatrix } from '@/lib/types'
+import type { ServiceType, VehicleType, PriceMatrix, DiscountRule } from '@/lib/types'
+
+const discountRuleSchema = z.object({
+  name: z.string().min(1, 'Rule name is required'),
+  day_of_week: z.union([
+    z.literal(0), z.literal(1), z.literal(2),
+    z.literal(3), z.literal(4), z.literal(5), z.literal(6),
+  ]),
+  percentage: z.number().int().min(1).max(100),
+  active: z.boolean(),
+})
 
 async function getAdminSiteId(): Promise<string> {
   const supabase = await createClient()
@@ -80,5 +91,24 @@ export async function savePriceMatrix(matrix: PriceMatrix): Promise<{ error?: st
 
   if (error) return { error: error.message }
   revalidatePath('/settings')
+  return {}
+}
+
+export async function saveDiscountRules(rules: DiscountRule[]): Promise<{ error?: string }> {
+  const parsed = z.array(discountRuleSchema).safeParse(rules)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Invalid discount rules' }
+  }
+
+  const siteId = await getAdminSiteId()
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from('app_config')
+    .upsert({ site_id: siteId, key: 'discount_rules', value: parsed.data as unknown as Json })
+
+  if (error) return { error: error.message }
+  revalidatePath('/settings')
+  revalidatePath('/revenue')
   return {}
 }
