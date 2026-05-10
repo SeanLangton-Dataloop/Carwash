@@ -9,6 +9,7 @@ interface StaffMember {
   id: string
   full_name: string
   role: string
+  pay_type: string
 }
 
 interface Props {
@@ -101,7 +102,14 @@ export default function AttendanceClient({ date, staff, initialPresent }: Props)
                   return (
                     <li key={member.id} className="flex items-center gap-3 px-4 py-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-900">{member.full_name}</p>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <p className="text-sm font-medium text-neutral-900">{member.full_name}</p>
+                          {member.pay_type === 'monthly_salary' && (
+                            <span className="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">
+                              Salaried
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-neutral-500">
                           {ROLE_LABEL[member.role] ?? member.role}
                         </p>
@@ -109,7 +117,7 @@ export default function AttendanceClient({ date, staff, initialPresent }: Props)
                       <button
                         type="button"
                         onClick={() => toggle(member.id)}
-                        className={`shrink-0 inline-flex items-center justify-center rounded-lg px-4 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[36px] ${
+                        className={`shrink-0 inline-flex items-center justify-center rounded-lg px-4 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 min-h-[44px] ${
                           isPresent
                             ? 'bg-emerald-500 text-white hover:bg-emerald-600'
                             : 'border border-neutral-300 bg-white text-neutral-500 hover:bg-neutral-50'

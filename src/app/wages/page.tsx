@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase-server'
 import WagesClient from './WagesClient'
 import { getMondayOf, addDays, calculateWeeklyWages } from '@/lib/wages'
+import type { StaffForWages } from '@/lib/wages'
+import type { PayType } from '@/lib/types'
 
 export default async function WagesPage({
   searchParams,
@@ -30,7 +32,7 @@ export default async function WagesPage({
   const [{ data: staffRows }, { data: attendanceRows }] = await Promise.all([
     supabase
       .from('staff')
-      .select('id, full_name, role, daily_rate')
+      .select('id, full_name, role, pay_type, daily_rate, monthly_salary')
       .eq('site_id', profile.site_id)
       .eq('is_active', true)
       .order('full_name'),
@@ -42,8 +44,17 @@ export default async function WagesPage({
       .lte('date', weekEnd),
   ])
 
+  const staff: StaffForWages[] = (staffRows ?? []).map(r => ({
+    id: r.id,
+    full_name: r.full_name,
+    role: r.role,
+    pay_type: (r.pay_type ?? 'daily_rate') as PayType,
+    daily_rate: r.daily_rate,
+    monthly_salary: r.monthly_salary ?? null,
+  }))
+
   const summaries = calculateWeeklyWages(
-    staffRows ?? [],
+    staff,
     attendanceRows ?? [],
     weekStart,
     weekEnd,

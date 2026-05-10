@@ -3,12 +3,15 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createStaff, updateStaff, deactivateStaff } from '@/app/staff/actions'
+import type { PayType } from '@/lib/types'
 
 interface ExistingStaff {
   id: string
   full_name: string
   role: string
+  pay_type: PayType
   daily_rate: number
+  monthly_salary: number | null
   phone: string | null
   is_active: boolean
 }
@@ -29,8 +32,12 @@ export default function StaffForm({ existingStaff }: Props) {
 
   const [fullName, setFullName] = useState(existingStaff?.full_name ?? '')
   const [role, setRole] = useState(existingStaff?.role ?? 'washer')
+  const [payType, setPayType] = useState<PayType>(existingStaff?.pay_type ?? 'daily_rate')
   const [dailyRate, setDailyRate] = useState(
     existingStaff ? String(existingStaff.daily_rate) : ''
+  )
+  const [monthlySalary, setMonthlySalary] = useState(
+    existingStaff?.monthly_salary != null ? String(existingStaff.monthly_salary) : ''
   )
   const [phone, setPhone] = useState(existingStaff?.phone ?? '')
   const [error, setError] = useState('')
@@ -52,17 +59,32 @@ export default function StaffForm({ existingStaff }: Props) {
       return
     }
 
-    const rate = parseFloat(dailyRate)
-    if (isNaN(rate) || rate < 0) {
-      setError('Enter a valid daily rate (0 or more).')
-      return
+    let resolvedDailyRate = 0
+    let resolvedMonthlySalary: number | null = null
+
+    if (payType === 'daily_rate') {
+      const rate = parseFloat(dailyRate)
+      if (isNaN(rate) || rate <= 0) {
+        setError('Enter a valid daily rate greater than zero.')
+        return
+      }
+      resolvedDailyRate = rate
+    } else {
+      const salary = parseFloat(monthlySalary)
+      if (isNaN(salary) || salary <= 0) {
+        setError('Enter a valid monthly salary greater than zero.')
+        return
+      }
+      resolvedMonthlySalary = salary
     }
 
     startSave(async () => {
       const params = {
         full_name: fullName.trim(),
         role,
-        daily_rate: rate,
+        pay_type: payType,
+        daily_rate: resolvedDailyRate,
+        monthly_salary: resolvedMonthlySalary,
         phone: phone.trim(),
       }
 
@@ -162,25 +184,81 @@ export default function StaffForm({ existingStaff }: Props) {
               </div>
             </div>
 
-            {/* Daily rate */}
+            {/* Pay type */}
             <div>
-              <label className="block text-sm font-medium text-neutral-700">
-                Daily rate
-              </label>
-              <div className="mt-1 flex rounded-lg border border-neutral-300 focus-within:ring-2 focus-within:ring-sky-500">
-                <span className="flex items-center rounded-l-lg bg-neutral-100 px-3 text-sm text-neutral-500 border-r border-neutral-300 select-none">
-                  R
-                </span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={dailyRate}
-                  onChange={e => setDailyRate(e.target.value)}
-                  placeholder="0.00"
-                  className="block w-full rounded-r-lg px-3 py-2.5 text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none bg-white"
-                />
+              <p className="block text-sm font-medium text-neutral-700 mb-2">Pay type</p>
+              <div className="flex gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="pay-type"
+                    value="daily_rate"
+                    checked={payType === 'daily_rate'}
+                    onChange={() => setPayType('daily_rate')}
+                    className="h-4 w-4 text-sky-500 border-neutral-300 focus:ring-sky-500"
+                  />
+                  <span className="text-sm text-neutral-700">Daily rate</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="pay-type"
+                    value="monthly_salary"
+                    checked={payType === 'monthly_salary'}
+                    onChange={() => setPayType('monthly_salary')}
+                    className="h-4 w-4 text-sky-500 border-neutral-300 focus:ring-sky-500"
+                  />
+                  <span className="text-sm text-neutral-700">Monthly salary</span>
+                </label>
               </div>
             </div>
+
+            {/* Daily rate — shown when pay_type = 'daily_rate' */}
+            {payType === 'daily_rate' && (
+              <div>
+                <label className="block text-sm font-medium text-neutral-700">
+                  Daily rate
+                </label>
+                <div className="mt-1 flex rounded-lg border border-neutral-300 focus-within:ring-2 focus-within:ring-sky-500">
+                  <span className="flex items-center rounded-l-lg bg-neutral-100 px-3 text-sm text-neutral-500 border-r border-neutral-300 select-none">
+                    R
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={dailyRate}
+                    onChange={e => setDailyRate(e.target.value)}
+                    placeholder="0.00"
+                    className="block w-full rounded-r-lg px-3 py-2.5 text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none bg-white"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Monthly salary — shown when pay_type = 'monthly_salary' */}
+            {payType === 'monthly_salary' && (
+              <div>
+                <label className="block text-sm font-medium text-neutral-700">
+                  Monthly salary
+                </label>
+                <div className="mt-1 flex rounded-lg border border-neutral-300 focus-within:ring-2 focus-within:ring-sky-500">
+                  <span className="flex items-center rounded-l-lg bg-neutral-100 px-3 text-sm text-neutral-500 border-r border-neutral-300 select-none">
+                    R
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={monthlySalary}
+                    onChange={e => setMonthlySalary(e.target.value)}
+                    placeholder="10 000.00"
+                    className="block w-full rounded-r-lg px-3 py-2.5 text-base text-neutral-900 placeholder:text-neutral-400 focus:outline-none bg-white"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-neutral-500">
+                  Fixed monthly amount, paid regardless of days worked.
+                </p>
+              </div>
+            )}
 
             {/* Phone */}
             <div>

@@ -21,8 +21,9 @@ const ROLE_LABEL: Record<string, string> = {
 export default function WagesClient({ weekStart, weekEnd, summaries }: Props) {
   const router = useRouter()
 
-  const totalWages = summaries.reduce((sum, s) => sum + s.total_wage, 0)
-  const totalDays = summaries.reduce((sum, s) => sum + s.days_present, 0)
+  const totalWages = summaries.reduce((sum, s) => sum + s.totalWage, 0)
+  const totalDays = summaries.reduce((sum, s) => sum + s.daysWorked, 0)
+  const hasSalaried = summaries.some(s => s.payType === 'monthly_salary')
 
   return (
     <div className="min-h-screen bg-neutral-100">
@@ -72,53 +73,84 @@ export default function WagesClient({ weekStart, weekEnd, summaries }: Props) {
             </p>
           </div>
         ) : (
-          <div className="rounded-xl bg-white shadow-sm border border-neutral-200 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-neutral-100 text-xs text-neutral-500 uppercase tracking-wide">
-                  <th className="px-4 py-3 text-left font-medium">Name</th>
-                  <th className="px-4 py-3 text-right font-medium hidden sm:table-cell">
-                    Rate/day
-                  </th>
-                  <th className="px-4 py-3 text-right font-medium">Days</th>
-                  <th className="px-4 py-3 text-right font-medium">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {summaries.map(s => (
-                  <tr key={s.staff_id} className={s.days_present === 0 ? 'opacity-50' : ''}>
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-neutral-900">{s.full_name}</p>
-                      <p className="text-xs text-neutral-500">
-                        {ROLE_LABEL[s.role] ?? s.role}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 text-right text-neutral-600 hidden sm:table-cell">
-                      {formatZAR(s.daily_rate)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium text-neutral-700">
-                      {s.days_present}
-                    </td>
+          <>
+            <div className="rounded-xl bg-white shadow-sm border border-neutral-200 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-100 text-xs text-neutral-500 uppercase tracking-wide">
+                    <th className="px-4 py-3 text-left font-medium">Name</th>
+                    <th className="px-4 py-3 text-right font-medium hidden sm:table-cell">Rate</th>
+                    <th className="px-4 py-3 text-right font-medium">Days</th>
+                    <th className="px-4 py-3 text-right font-medium">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-100">
+                  {summaries.map(s => {
+                    const isSalaried = s.payType === 'monthly_salary'
+                    return (
+                      <tr
+                        key={s.staffId}
+                        className={s.daysWorked === 0 && !isSalaried ? 'opacity-50' : ''}
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <p className="font-medium text-neutral-900">{s.name}</p>
+                            {isSalaried && (
+                              <span className="inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-700">
+                                Salaried
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-neutral-500">
+                            {ROLE_LABEL[s.role] ?? s.role}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3 text-right text-neutral-600 hidden sm:table-cell">
+                          {isSalaried ? (
+                            <>
+                              {formatZAR(s.monthlySalary)}
+                              <span className="text-xs text-neutral-400"> /mo</span>
+                            </>
+                          ) : (
+                            <>
+                              {formatZAR(s.dailyRate)}
+                              <span className="text-xs text-neutral-400"> /day</span>
+                            </>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium text-neutral-700">
+                          {s.daysWorked}
+                          {isSalaried && (
+                            <span className="text-xs text-neutral-400">*</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold text-neutral-900">
+                          {formatZAR(s.totalWage)}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-neutral-200 bg-neutral-50">
+                    <td className="px-4 py-3 font-semibold text-neutral-900">Total</td>
+                    <td className="px-4 py-3 hidden sm:table-cell" />
                     <td className="px-4 py-3 text-right font-semibold text-neutral-900">
-                      {formatZAR(s.total_wage)}
+                      {totalDays}
+                    </td>
+                    <td className="px-4 py-3 text-right font-bold text-neutral-900">
+                      {formatZAR(totalWages)}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-neutral-200 bg-neutral-50">
-                  <td className="px-4 py-3 font-semibold text-neutral-900">Total</td>
-                  <td className="px-4 py-3 hidden sm:table-cell" />
-                  <td className="px-4 py-3 text-right font-semibold text-neutral-900">
-                    {totalDays}
-                  </td>
-                  <td className="px-4 py-3 text-right font-bold text-neutral-900">
-                    {formatZAR(totalWages)}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
+                </tfoot>
+              </table>
+            </div>
+            {hasSalaried && (
+              <p className="text-xs text-neutral-500 px-1">
+                * Salaried staff wages show full monthly salary regardless of days worked.
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>

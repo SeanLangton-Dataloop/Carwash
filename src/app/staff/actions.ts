@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import type { PayType } from '@/lib/types'
 
 async function getAdminSite() {
   const supabase = await createClient()
@@ -24,7 +25,9 @@ async function getAdminSite() {
 interface StaffParams {
   full_name: string
   role: string
+  pay_type: PayType
   daily_rate: number
+  monthly_salary: number | null
   phone: string
 }
 
@@ -35,7 +38,9 @@ export async function createStaff(params: StaffParams): Promise<{ error?: string
     site_id: siteId,
     full_name: params.full_name,
     role: params.role,
+    pay_type: params.pay_type,
     daily_rate: params.daily_rate,
+    monthly_salary: params.monthly_salary,
     phone: params.phone || null,
     is_active: true,
   })
@@ -56,7 +61,9 @@ export async function updateStaff(
     .update({
       full_name: params.full_name,
       role: params.role,
+      pay_type: params.pay_type,
       daily_rate: params.daily_rate,
+      monthly_salary: params.monthly_salary,
       phone: params.phone || null,
     })
     .eq('id', id)

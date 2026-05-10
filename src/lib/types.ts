@@ -102,15 +102,6 @@ export type Profile = {
   updated_at: string
 }
 
-// Computed types
-export type WageSummary = {
-  staffId: string
-  name: string
-  dailyRate: number
-  daysWorked: number
-  totalWage: number
-}
-
 // Price matrix key format: "ServiceName|VehicleType"
 export type PriceMatrix = Record<string, number>
 
@@ -123,3 +114,16 @@ export type DiscountRule = {
 
 export type ServiceType = { name: string; active: boolean }
 export type VehicleType = { name: string; active: boolean }
+
+export type PayType = 'daily_rate' | 'monthly_salary'
+
+export type WageSummary = {
+  staffId: string
+  name: string
+  role: string
+  payType: PayType
+  dailyRate: number      // 0 when pay_type = 'monthly_salary'
+  monthlySalary: number  // 0 when pay_type = 'daily_rate'
+  daysWorked: number     // always tracked, even for salaried staff
+  totalWage: number      // dailyRate × daysWorked for daily; monthlySalary for salaried
+}

@@ -25,7 +25,7 @@ export default async function EditStaffPage({
 
   const { data: member } = await supabase
     .from('staff')
-    .select('id, full_name, role, daily_rate, phone, is_active')
+    .select('id, full_name, role, pay_type, daily_rate, monthly_salary, phone, is_active')
     .eq('id', id)
     .eq('site_id', profile.site_id)
     .single()
@@ -38,7 +38,9 @@ export default async function EditStaffPage({
         id: member.id,
         full_name: member.full_name,
         role: member.role,
+        pay_type: (member.pay_type ?? 'daily_rate') as 'daily_rate' | 'monthly_salary',
         daily_rate: member.daily_rate,
+        monthly_salary: member.monthly_salary,
         phone: member.phone,
         is_active: member.is_active,
       }}

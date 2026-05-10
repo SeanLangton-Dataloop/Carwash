@@ -28,7 +28,7 @@ export default async function AttendancePage({
   const [{ data: staffRows }, { data: attendanceRows }] = await Promise.all([
     supabase
       .from('staff')
-      .select('id, full_name, role')
+      .select('id, full_name, role, pay_type')
       .eq('site_id', profile.site_id)
       .eq('is_active', true)
       .order('full_name'),

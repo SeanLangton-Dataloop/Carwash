@@ -350,6 +350,8 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          monthly_salary: number | null
+          pay_type: string
           phone: string | null
           role: string
           site_id: string
@@ -361,6 +363,8 @@ export type Database = {
           full_name: string
           id?: string
           is_active?: boolean
+          monthly_salary?: number | null
+          pay_type?: string
           phone?: string | null
           role?: string
           site_id: string
@@ -372,6 +376,8 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          monthly_salary?: number | null
+          pay_type?: string
           phone?: string | null
           role?: string
           site_id?: string

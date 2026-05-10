@@ -1,23 +1,20 @@
+import type { PayType, WageSummary } from './types'
+
+export type { WageSummary }
+
 export interface StaffForWages {
   id: string
   full_name: string
   role: string
+  pay_type: PayType
   daily_rate: number
+  monthly_salary: number | null
 }
 
 export interface AttendanceRecord {
   staff_id: string
   date: string
   present: boolean
-}
-
-export interface WageSummary {
-  staff_id: string
-  full_name: string
-  role: string
-  daily_rate: number
-  days_present: number
-  total_wage: number
 }
 
 export function getMondayOf(dateStr: string): string {
@@ -50,16 +47,23 @@ export function calculateWeeklyWages(
   weekEnd: string,
 ): WageSummary[] {
   return staff.map(member => {
-    const days_present = attendance.filter(
+    const daysWorked = attendance.filter(
       a => a.staff_id === member.id && a.present && a.date >= weekStart && a.date <= weekEnd,
     ).length
+
+    const isSalaried = member.pay_type === 'monthly_salary'
+    const monthlySalary = member.monthly_salary ?? 0
+    const totalWage = isSalaried ? monthlySalary : daysWorked * member.daily_rate
+
     return {
-      staff_id: member.id,
-      full_name: member.full_name,
+      staffId: member.id,
+      name: member.full_name,
       role: member.role,
-      daily_rate: member.daily_rate,
-      days_present,
-      total_wage: days_present * member.daily_rate,
+      payType: member.pay_type,
+      dailyRate: isSalaried ? 0 : member.daily_rate,
+      monthlySalary: isSalaried ? monthlySalary : 0,
+      daysWorked,
+      totalWage,
     }
   })
 }
